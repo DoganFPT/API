@@ -12,8 +12,8 @@ SECRET_KEY = your_private_key
 
 #dummy data for testing eventually will use a db for this
 users = {
-    "user1" : "password1",
-    "user2" : "passwort2"
+    "user1" : {"password": "password1", "role" : "admin"},
+    "user2" : {"password": "password2", "role" : "user"}
 }
 
 
@@ -25,8 +25,11 @@ def login():
     username = data.get("username")
     password = data.get("password")
 
-    if username in users and users[username] == password:
+    user = users.get(username)
+
+    if user and user["password"] == password:
         payload = {
+            "role": user["role"],    
             "sub" : username,
             "exp" : datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         }
@@ -47,13 +50,14 @@ def token_req(f):
                 token= token[7:]
 
             decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            user_role = decoded["role"]
             current_user = decoded["sub"]
         except jwt.ExpiredSignatureError:
             return jsonify({"message": "Token expired"})
         except jwt.InvalidTokenError:
             return jsonify({"message" : "invalid token"})
 
-        return f(current_user, *args, **kwargs)
+        return f(current_user,user_role, *args, **kwargs)
     return decorator
 
 @app.route("/protected",methods=["GET"])
@@ -62,6 +66,13 @@ def token_req(f):
 
 def protected(current_user):
     return jsonify({"message": f"Welcome, {current_user} You have access to this resource."})
+
+@app.route("/admin", methods=["GET"])
+@token_req
+def admins(current_user, user_role):
+    if user_role != "admin":
+        return jsonify({"not an admin"})
+    return jsonify({f"Welcome {curren_user} You have access to admin resources."})
 
 
 if __name__ == "__main__":
