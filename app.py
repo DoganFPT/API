@@ -1,11 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for,jsonify
 from dotenv import load_dotenv
+from flask_sqlalchemy import SQLAlchemy
 import jwt
 import os
 import bcrypt
 import datetime
 
 app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"]
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db = SQLAlchemy(app)
+
 
 #keep this hidden
 SECRET_KEY = your_private_key
